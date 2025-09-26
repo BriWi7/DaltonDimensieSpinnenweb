@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dalton Taak Assessment Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .dimensions-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 25px;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 2px;
+        }
+
+        .dimensions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .sliders-container {
+            display: grid;
+            gap: 25px;
+        }
+
+        .dimension {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #4facfe;
+            transition: all 0.3s ease;
+        }
+
+        .dimension:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .dimension-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .dimension-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .slider-container {
+            position: relative;
+            margin: 15px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+            transition: background 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: #777;
+            margin-top: 8px;
+        }
+
+        .value-display {
+            text-align: center;
+            font-weight: 600;
+            color: #4facfe;
+            font-size: 1.1em;
+            margin-top: 10px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 20px;
+        }
+
+        .questions-section {
+            margin-top: 50px;
+            padding-top: 40px;
+            border-top: 2px solid #eee;
+        }
+
+        .question {
+            margin-bottom: 30px;
+        }
+
+        .question-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .question-input {
+            width: 100%;
+            min-height: 120px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .question-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .actions {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            min-width: 160px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .dimensions-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .btn {
+                display: block;
+                margin: 10px auto;
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Dalton Taak Assessment Tool</h1>
+            <p>Evalueer uw daltontaak aan de hand van 8 belangrijke dimensies</p>
+        </div>
+
+        <div class="content" id="content">
+            <div class="dimensions-section">
+                <h2 class="section-title">Dimensies van uw Daltontaak</h2>
+                
+                <div class="dimensions-grid">
+                    <div class="sliders-container">
+                        <div class="dimension">
+                            <div class="dimension-label">Plannings-autonomie</div>
+                            <div class="dimension-description">Van voorgestructureerd tot leerlinggestuurd</div>
+                            <div class="slider-container">
+                                <input type="range" min="1" max="10" value="5" class="slider" id="planning">
+                                <div class="slider-labels">
+                                    <span>Voorgestructureerd</span>
+                                    <span>Leerlinggestuurd</span>
+                                </div>
+                                <div class="value-display" id="planning-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="dimension">
+                            <div class="dimension-label">Taakoriëntatie</div>
+                            <div class="dimension-description">Van activiteit naar doel</div>
+                            <div class="slider-container">
+                                <input type="range" min="1" max="10" value="5" class="slider" id="orientation">
+                                <div class="slider-labels">
+                                    <span>Activiteit</span>
+                                    <span>Doel</span>
+                                </div>
+                                <div class="value-display" id="orientation-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="dimension">
+                            <div class="dimension-label">Taakgeneratie</div>
+                            <div class="dimension-description">Van leerkracht naar leerling</div>
+                            <div class="slider-container">
+                                <input type="range" min="1" max="10" value="5" class="slider" id="generation">
+                                <div class="slider-labels">
+                                    <span>Leerkracht</span>
+                                    <span>Leerling</span>
+                                </div>
+                                <div class="value-display" id="generation-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="dimension">
+                            <div class="dimension-label">Betekenisgeving</div>
+                            <div class="dimension-description">Van plat naar betekenisvol</div>
+                            <div class="slider-container">
+                                <input type="range" min="1" max="10" value="5" class="slider" id="meaning">
+                                <div class="slider-labels">
+                                    <span>Plat</span>
+                                    <span>Betekenisvol</span>
+                                </div>
+                                <div class="value-display" id="meaning-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="dimension">
+                            <div class="dimension-label">Vakintegratie</div>
+                            <div class="dimension-description">Van enkelvoudig naar geïntegreerd</div>
+                            <div class="slider-container">
+                                <input type="range" min="1" max="10" value="5" class="slider" id="integration">
+                                <div class="slider-labels">
+                                    <span>Enkelvoudig</span>
+                                    <span>Geïntegreerd</span>
+                                </div>
+                                <div class="value-display" id="integration-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="dimension">
+                            <div class="dimension-label">Zelfmonitoring</div>
+                            <div class="dimension-description">Van afvinken naar reflecteren</div>
+                            <div class="slider-container">
+                                <input type="range" min="1" max="10" value="5" class="slider" id="monitoring">
+                                <div class="slider-labels">
+                                    <span>Afvinken</span>
+                                    <span>Reflecteren</span>
+                                </div>
+                                <div class="value-display" id="monitoring-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="dimension">
+                            <div class="dimension-label">Differentiatie</div>
+                            <div class="dimension-description">Van uniform naar gepersonaliseerd</div>
+                            <div class="slider-container">
+                                <input type="range" min="1" max="10" value="5" class="slider" id="differentiation">
+                                <div class="slider-labels">
+                                    <span>Uniform</span>
+                                    <span>Gepersonaliseerd</span>
+                                </div>
+                                <div class="value-display" id="differentiation-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="dimension">
+                            <div class="dimension-label">Samenwerking</div>
+                            <div class="dimension-description">Van individueel naar collaboratief</div>
+                            <div class="slider-container">
+                                <input type="range" min="1" max="10" value="5" class="slider" id="collaboration">
+                                <div class="slider-labels">
+                                    <span>Individueel</span>
+                                    <span>Collaboratief</span>
+                                </div>
+                                <div class="value-display" id="collaboration-value">5</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="radarChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="questions-section">
+                <h2 class="section-title">Reflectievragen</h2>
+                
+                <div class="question">
+                    <label class="question-label" for="question1">
+                        1. Wat zijn de sterke punten van uw daltontaak volgens deze analyse?
+                    </label>
+                    <textarea class="question-input" id="question1" 
+                              placeholder="Beschrijf hier de aspecten waar uw taak goed scoort en waarom dit belangrijk is..."></textarea>
+                </div>
+
+                <div class="question">
+                    <label class="question-label" for="question2">
+                        2. Op welke dimensies zou u uw taak willen verbeteren en hoe?
+                    </label>
+                    <textarea class="question-input" id="question2" 
+                              placeholder="Identificeer verbeterpunten en beschrijf concrete stappen om deze te realiseren..."></textarea>
+                </div>
+
+                <div class="question">
+                    <label class="question-label" for="question3">
+                        3. Hoe sluit deze taak aan bij de daltonprincipes van uw school?
+                    </label>
+                    <textarea class="question-input" id="question3" 
+                              placeholder="Reflecteer op de aansluiting met uw schoolvisie en daltonfilosofie..."></textarea>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn" onclick="saveAsPDF()">Opslaan als PDF</button>
+                <button class="btn" onclick="saveAsImage()">Opslaan als Afbeelding</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        const dimensions = [
+            'Plannings-autonomie',
+            'Taakoriëntatie', 
+            'Taakgeneratie',
+            'Betekenisgeving',
+            'Vakintegratie',
+            'Zelfmonitoring',
+            'Differentiatie',
+            'Samenwerking'
+        ];
+
+        const sliderIds = ['planning', 'orientation', 'generation', 'meaning', 'integration', 'monitoring', 'differentiation', 'collaboration'];
+
+        function initChart() {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            
+            chart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: dimensions,
+                    datasets: [{
+                        label: 'Uw Daltontaak',
+                        data: [5, 5, 5, 5, 5, 5, 5, 5],
+                        backgroundColor: 'rgba(79, 172, 254, 0.2)',
+                        borderColor: 'rgba(79, 172, 254, 1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: 'rgba(79, 172, 254, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(79, 172, 254, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Dalton Dimensies Radar',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            },
+                            color: '#333'
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            min: 0,
+                            max: 10,
+                            stepSize: 2,
+                            grid: {
+                                color: '#e0e0e0'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#555'
+                            },
+                            ticks: {
+                                display: true,
+                                stepSize: 2,
+                                font: {
+                                    size: 10
+                                },
+                                color: '#999'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 500,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            const values = sliderIds.map(id => parseInt(document.getElementById(id).value));
+            chart.data.datasets[0].data = values;
+            chart.update('none');
+        }
+
+        function setupSliders() {
+            sliderIds.forEach((id, index) => {
+                const slider = document.getElementById(id);
+                const valueDisplay = document.getElementById(id + '-value');
+                
+                slider.addEventListener('input', function() {
+                    valueDisplay.textContent = this.value;
+                    updateChart();
+                });
+            });
+        }
+
+        async function saveAsPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            
+            // Title
+            pdf.setFontSize(20);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Dalton Taak Assessment', 20, 30);
+            
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            pdf.text('Datum: ' + new Date().toLocaleDateString('nl-NL'), 20, 40);
+            
+            // Dimension scores
+            pdf.setFontSize(16);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Dimensie Scores:', 20, 60);
+            
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            let yPos = 75;
+            sliderIds.forEach((id, index) => {
+                const value = document.getElementById(id).value;
+                pdf.text(`${dimensions[index]}: ${value}/10`, 25, yPos);
+                yPos += 8;
+            });
+            
+            // Chart
+            const canvas = document.getElementById('radarChart');
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', 20, 145, 80, 80);
+            
+            // Questions on new page
+            pdf.addPage();
+            pdf.setFontSize(16);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('Reflectievragen:', 20, 30);
+            
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            yPos = 45;
+            
+            for(let i = 1; i <= 3; i++) {
+                const question = document.querySelector(`.question:nth-child(${i}) .question-label`).textContent;
+                const answer = document.getElementById(`question${i}`).value;
+                
+                pdf.setFont(undefined, 'bold');
+                pdf.text(question, 20, yPos, { maxWidth: 170 });
+                yPos += 15;
+                
+                pdf.setFont(undefined, 'normal');
+                if(answer) {
+                    const lines = pdf.splitTextToSize(answer, 170);
+                    pdf.text(lines, 20, yPos);
+                    yPos += lines.length * 7 + 15;
+                } else {
+                    pdf.text('(Niet ingevuld)', 20, yPos);
+                    yPos += 20;
+                }
+                
+                if(yPos > 250) {
+                    pdf.addPage();
+                    yPos = 30;
+                }
+            }
+            
+            pdf.save('dalton-taak-assessment.pdf');
+        }
+
+        async function saveAsImage() {
+            const element = document.getElementById('content');
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true
+            });
+            
+            const link = document.createElement('a');
+            link.download = 'dalton-taak-assessment.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+            setupSliders();
+        });
+    </script>
+</body>
+</html>
